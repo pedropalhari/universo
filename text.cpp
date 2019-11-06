@@ -18,6 +18,26 @@ float xRotated = 90.0, yRotated = 0.0, zRotated = 0.0;
 unsigned char moonTextureData[256][256][3];
 unsigned char earthTextureData[256][256][3];
 
+struct CameraPos {
+  float cameraX;
+  float cameraY;
+  float cameraZ;
+
+  float directionX;
+  float directionY;
+  float directionZ;
+};
+
+struct CameraPos cameraPos = {
+  .cameraX = 0,
+  .cameraY = 0,
+  .cameraZ = 0,
+
+  .directionX = 10,
+  .directionY = 10,
+  .directionZ = 10
+};
+
 // https://solarianprogrammer.com/2018/11/19/cpp-reading-writing-bmp-images/
 
 void make_tex(void) {
@@ -67,8 +87,20 @@ void draw(void) {
   glClearColor(0.5, 0.5, 1.0, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
+
+  gluLookAt(
+    cameraPos.cameraX,
+    cameraPos.cameraY,
+    cameraPos.cameraZ,
+
+    cameraPos.cameraX + cameraPos.directionX,
+    cameraPos.cameraY + cameraPos.directionY,
+    cameraPos.cameraZ + cameraPos.directionZ,
+    0, 1, 0);
 
   drawSphere(earth, earthTex, zRotated, (point){x : 0, y : 0, z : -2});
   drawSphere(moon, moonTex, zRotated * 90, (point){x : 10, y : 0, z : -2});
@@ -124,6 +156,68 @@ unsigned char* readBMP(char* filename) {
   return data;
 }
 
+float angles_x, angles_y;
+
+void motion(int x, int y) {
+  static bool wrap = false;
+
+  int dx, dy;
+
+  if(!wrap) {
+    int ww = glutGet(GLUT_WINDOW_WIDTH);
+    int wh = glutGet(GLUT_WINDOW_HEIGHT);
+
+    dx = x - ww / 2;
+    dy = y - wh / 2;
+
+    // Do something with dx and dy here
+
+    // move mouse pointer back to the center of the window
+    wrap = true;
+    glutWarpPointer(ww / 2, wh / 2);
+  } else {
+    wrap = false;
+    return;
+  }
+
+  std::cout << "(" << dx << "," << dy << ")" << "  (" << x << "," << y << ")\n";
+
+  const float mousespeed = 0.001;
+
+  angles_x += dx * mousespeed;
+  angles_y += dy * mousespeed;
+
+  if(angles_x < -M_PI)
+    angles_x += M_PI * 2;
+  else if(angles_x > M_PI)
+    angles_x -= M_PI * 2;
+
+  if(angles_y < -M_PI / 2)
+    angles_y = -M_PI / 2;
+  if(angles_y > M_PI / 2)
+    angles_y = M_PI / 2;
+
+  cameraPos.directionX = -sin(angles_x) * cos(angles_y);
+  cameraPos.directionY = -sin(angles_y);
+  cameraPos.directionZ = cos(angles_x) * cos(angles_y);
+}
+
+void MyKeyboardFunc(unsigned char key, int x, int y){
+  if(key == 'w')
+    cameraPos.cameraX += 0.1;
+
+  if(key == 'a')
+   cameraPos.cameraY += 0.1;
+
+  if(key == 's')
+    cameraPos.cameraX -= 0.1;
+
+  if(key == 'd')
+    cameraPos.cameraY -= 0.1;
+
+  
+}
+
 int main(int argc, char** argv) {
   glutInit(&argc, argv);
 
@@ -137,6 +231,12 @@ int main(int argc, char** argv) {
   glutIdleFunc(idleFunc);
 
   init();
+
+  glutSetCursor(GLUT_CURSOR_NONE);
+  glutPassiveMotionFunc( motion );
+  glutKeyboardFunc(MyKeyboardFunc);
+
+
 
   glutMainLoop();
 }
