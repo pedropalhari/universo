@@ -51,6 +51,6 @@ Assim fica fácil controlar o posicionamento das esferas a cada loop do OpenGL.
 
 Comando para compilação:
 
-`gcc text.cpp -lGL -lGLU -lglut -lm -lstdc++ && ./a.out`
+`gcc main.cpp -lGL -lGLU -lglut -lm -lstdc++ && ./a.out`
 
 Instalar opengl e lstdc++6-9 caso necessário.
